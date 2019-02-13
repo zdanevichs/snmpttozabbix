@@ -44,7 +44,7 @@ if __name__ == '__main__':
 verbose("Snmpttzabbix is starting")
 
 
-zabbix = ZabbixSender('10.77.0.6', 10051)
+zabbix = ZabbixSender('127.0.0.1', 10051)
 packet = ZabbixPacket()
 send=True #Разрешает отправку трапа на  zabbix
 #input=sys.stdin.read()
