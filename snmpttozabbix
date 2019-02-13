@@ -1,0 +1,91 @@
+#!/usr/bin/env python3.6
+# -*- coding: utf-8 -*-
+
+
+"""Snmpttzabbix. 
+
+Usage:
+  snmpttozabbix
+  snmpttozabbix --verbose
+  snmpttozabbix <host> <severity> <key> <value> [--desc=<desc>] [--verbose]
+
+Options:
+  -h --help     Show this screen.
+  -v --version     Show version.
+  --verbose     Show debug info
+
+"""
+import sys
+import time
+import logging
+import datetime
+from docopt import docopt
+from ZabbixSender import ZabbixSender, ZabbixPacket
+
+logfile = '/var/log/snmptt/snmpttozabbix.log'
+logger = logging.getLogger(__name__)
+handler = logging.FileHandler(logfile)
+formatter = logging.Formatter('%(asctime)s %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(logging.DEBUG)
+
+
+def verbose(text):
+    if(arguments["--verbose"]) : print(text)
+    #print(text)
+
+if __name__ == '__main__':
+    arguments = docopt(__doc__, version='Snmpttzabbix 0.1b')
+    host = arguments["<host>"]
+    key = arguments["<key>"]
+    value = arguments["<value>"]
+
+verbose("Snmpttzabbix is starting")
+
+
+zabbix = ZabbixSender('10.77.0.6', 10051)
+packet = ZabbixPacket()
+send=True #Разрешает отправку трапа на  zabbix
+#input=sys.stdin.read()
+input_raw=sys.stdin.read().split('\n')
+verbose(input_raw)
+#parse data from input raw source
+#Дата и время трапа
+date_time=datetime.datetime.now() #time.mktime(datetime.strptime(datetime.datetime.now(), "%Y-%m-%d %H:%M:%S").timetuple())
+#IP адрес хоста отправившего трап
+host=input_raw[1].split('[')[1].split(']')[0]
+#Время непрерывной работы хоста приславшего трап
+uptime=input_raw[2].split(' ')[1]
+#Название события вызвавшего трап
+name=input_raw[3].split('::')[-1]
+#Получаем ключи которые прилетели с трапом
+key={}
+for i in range(4, len(input_raw)):
+    if (input_raw[i]!=""):
+        #создаем словарь ключ : значение
+        key[input_raw[i].split('::')[1].split(' ')[0]]=input_raw[i].split(' ')[-1]
+
+# verbose(str(date_time) + " "  + host + " " + uptime + " " + name + " " + str(key))
+# verbose("Add new data to host {0!r}, key: {1!r} and value: {2!r}....".format(host, key, value))
+#zabbix.add(host,key,"value")
+# verbose("Sending data: {}".format(zabbix.getAll()))
+# zabbix.add("10.77.78.54", "if.discovery", "{\"data\": [{ \"{#PORT}\": \"10\" }]}")
+# zabbix.add("10.77.78.54", "TrapLinkStatus[10]", "down")
+
+#Конвеер из правил для отправки в заббикс по заданным ниже шаблонам
+linkfilter=["linkDown", "linkUp"]
+only_key=["authenticationFailure"]
+if(name in linkfilter):
+    for k,v in key.items():
+        packet.add(host, "{0}.[{1}]".format(k.split('.')[0],k.split('.')[1]), v)
+elif(name in only_key):
+    packet.add(host, name, True)
+else:
+    logger.debug("Ключ {0!r} неизвестен, необходимо определить для него модель поведения в конвеере правил.".format(name))
+    send=False
+
+if(send): zabbix.send(packet)
+verbose(packet.packet)
+verbose(zabbix.status)
+#logger.debug("Закончил работу")
