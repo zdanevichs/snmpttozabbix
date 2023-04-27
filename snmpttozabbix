@@ -4,12 +4,13 @@
 """Snmpttzabbix. 
 
 Usage:
-  snmpttozabbix [--logfile=<path>]
-  snmpttozabbix <host> <severity> <key> <value> [--desc=<desc>] [--logfile=<path>]
+  snmpttozabbix [--host=<host>] [--port=<port>] [--logfile=<path>]
 
 Options:
   -h --help             Show this screen.
   -v --version          Show version.
+  --host=<host>         ZabbixServer ip address [default: 127.0.0.1]
+  --port=<port>         ZabbixServer port [default: 10051]
   --logfile=<path>      Logfile destanation [default: /var/log/snmpttozabbix.log]
 
 """
@@ -20,33 +21,34 @@ from docopt import docopt
 from pyzabbix import ZabbixMetric, ZabbixSender
 
 if __name__ == '__main__':
-    arguments = docopt(__doc__, version='Snmpttzabbix 0.1b')
-    host = arguments["<host>"]
-    key = arguments["<key>"]
-    value = arguments["<value>"]
+    arguments = docopt(__doc__, version='Snmpttzabbix 0.11b')
+    host = arguments["--host"]
+    port = int(arguments["--port"])
     log = arguments["--logfile"]
 
-logging.basicConfig(filename=log, encoding='utf-8', level=logging.INFO, format='%(asctime)s %(message)s')
+    logging.basicConfig(filename=log, encoding='utf-8', level=logging.INFO, format='%(asctime)s %(message)s')
 
-zabbix = ZabbixSender('10.77.0.6', 10051)
-packet = []
-send=True #Разрешает отправку трапа на  zabbix
-input_raw=sys.stdin.read().split('\n')
-#parse data from input raw source
-#IP адрес хоста отправившего трап
-host=input_raw[1].split('[')[1].split(']')[0]
-#Время непрерывной работы хоста приславшего трап
-uptime=input_raw[2].split(' ')[1]
-#Название события вызвавшего трап
-name=input_raw[3].split('::')[-1]
-#Получаем ключи которые прилетели с трапом
-key={}
-for i in range(4, len(input_raw)-1):
-    #создаем словарь ключ : значение
-    key[input_raw[i].split('::')[1].split(' ')[0]]=input_raw[i].split(' ')[-1]
-#Добавляем на отправку все пары ключ значение
-for k,v in key.items():
-    metric=ZabbixMetric(host, "{0}_{1}".format(name,k), v)
-    packet.append(metric)
-logging.info(packet)
-logging.info(zabbix.send(packet))
+    zabbix = ZabbixSender(host, port)
+    packet = []
+    send=True #Разрешает отправку трапа на  zabbix
+    input_raw=sys.stdin.read().split('\n')
+    #parse data from input raw source
+    #IP адрес хоста отправившего трап
+    host=input_raw[1].split('[')[1].split(']')[0]
+    #Время непрерывной работы хоста приславшего трап
+    uptime=input_raw[2].split(' ')[1]
+    #Название события вызвавшего трап
+    name=input_raw[3].split('::')[-1]
+    #Получаем ключи которые прилетели с трапом
+    key={}
+    for i in range(4, len(input_raw)-1):
+        #создаем словарь ключ : значение
+        key[input_raw[i].split('::')[1].split(' ')[0]]=input_raw[i].split(' ')[-1]
+    #Добавляем на отправку все пары ключ значение
+    for k,v in key.items():
+        metric=ZabbixMetric(host, "{0}_{1}".format(name,k), v)
+        packet.append(metric)
+    logging.info(packet)
+    logging.info(zabbix.send(packet))
+else:
+    print("Ошибка. Запустите приложение в консоли.")
