@@ -30,13 +30,10 @@ if __name__ == '__main__':
 
     zabbix = ZabbixSender(host, port)
     packet = []
-    send=True #Разрешает отправку трапа на  zabbix
     input_raw=sys.stdin.read().split('\n')
     #parse data from input raw source
     #IP адрес хоста отправившего трап
     host=input_raw[1].split('[')[1].split(']')[0]
-    #Время непрерывной работы хоста приславшего трап
-    uptime=input_raw[2].split(' ')[1]
     #Название события вызвавшего трап
     name=input_raw[3].split('::')[-1]
     #Получаем ключи которые прилетели с трапом
