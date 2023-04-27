@@ -41,7 +41,7 @@ uptime=input_raw[2].split(' ')[1]
 name=input_raw[3].split('::')[-1]
 #Получаем ключи которые прилетели с трапом
 key={}
-for i in range(4, len(input_raw)):
+for i in range(4, len(input_raw)-1):
     #создаем словарь ключ : значение
     key[input_raw[i].split('::')[1].split(' ')[0]]=input_raw[i].split(' ')[-1]
 #Добавляем на отправку все пары ключ значение
