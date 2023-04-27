@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""Snmpttzabbix. 
+
+Usage:
+  snmpttozabbix [--logfile=<path>]
+  snmpttozabbix <host> <severity> <key> <value> [--desc=<desc>] [--logfile=<path>]
+
+Options:
+  -h --help             Show this screen.
+  -v --version          Show version.
+  --logfile=<path>      Logfile destanation [default: /var/log/snmpttozabbix.log]
+
+"""
+import sys
+import time
+import logging
+from datetime import datetime
+from docopt import docopt
+from pyzabbix import ZabbixMetric, ZabbixSender
+
+if __name__ == '__main__':
+    arguments = docopt(__doc__, version='Snmpttzabbix 0.1b')
+    host = arguments["<host>"]
+    key = arguments["<key>"]
+    value = arguments["<value>"]
+    log = arguments["--logfile"]
+
+logging.basicConfig(filename=log, encoding='utf-8', level=logging.INFO, format='%(asctime)s %(message)s')
+
+zabbix = ZabbixSender('10.77.0.6', 10051)
+packet = []
+send=True #Разрешает отправку трапа на  zabbix
+input_raw=sys.stdin.read().split('\n')
+#parse data from input raw source
+#Дата и время трапа
+date_time=time.mktime(datetime.strptime(input_raw[0].split(',')[0], "%Y-%m-%d %H:%M:%S").timetuple())
+#IP адрес хоста отправившего трап
+host=input_raw[1].split('[')[1].split(']')[0]
+#Время непрерывной работы хоста приславшего трап
+uptime=input_raw[2].split(' ')[1]
+#Название события вызвавшего трап
+name=input_raw[3].split('::')[-1]
+#Получаем ключи которые прилетели с трапом
+key={}
+for i in range(4, len(input_raw)):
+    #создаем словарь ключ : значение
+    key[input_raw[i].split('::')[1].split(' ')[0]]=input_raw[i].split(' ')[-1]
+#Добавляем на отправку все пары ключ значение
+for k,v in key.items():
+    metric=ZabbixMetric(host, "{0}.[{1}]".format(name,k), v)
+    packet.append(metric)
+logging.info(packet)
+logging.info(zabbix.send(packet))
