@@ -46,7 +46,7 @@ for i in range(4, len(input_raw)-1):
     key[input_raw[i].split('::')[1].split(' ')[0]]=input_raw[i].split(' ')[-1]
 #Добавляем на отправку все пары ключ значение
 for k,v in key.items():
-    metric=ZabbixMetric(host, "{0}.[{1}]".format(name,k), v)
+    metric=ZabbixMetric(host, "{0}_{1}".format(name,k), v)
     packet.append(metric)
 logging.info(packet)
 logging.info(zabbix.send(packet))
