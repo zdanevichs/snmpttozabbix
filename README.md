@@ -1,2 +1,2 @@
 # snmpttozabbix 
-Можно использовать в качестве handler для snmptrapd для передачи трапа в zabbix траппер эллемент.
+ Handler snmptrapd для передачи данных в zabbix траппер эллемент.
