@@ -16,7 +16,6 @@ Options:
 import sys
 import time
 import logging
-from datetime import datetime
 from docopt import docopt
 from pyzabbix import ZabbixMetric, ZabbixSender
 
@@ -34,8 +33,6 @@ packet = []
 send=True #Разрешает отправку трапа на  zabbix
 input_raw=sys.stdin.read().split('\n')
 #parse data from input raw source
-#Дата и время трапа
-date_time=time.mktime(datetime.strptime(input_raw[0].split(',')[0], "%Y-%m-%d %H:%M:%S").timetuple())
 #IP адрес хоста отправившего трап
 host=input_raw[1].split('[')[1].split(']')[0]
 #Время непрерывной работы хоста приславшего трап
